@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ไดเรกทอรีพนักงาน - GIT Staff Directory</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 16px; }
+        .people-search { max-width: 1200px; margin: 0 auto; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 32px; padding: 32px 0; background: linear-gradient(135deg, #6264A7 0%, #8764B8 100%); border-radius: 20px; color: white; }
+        .header-icon { font-size: 48px; margin-bottom: 16px; }
+        .title { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { font-size: 16px; opacity: 0.9; }
+        .search-section { margin-bottom: 32px; display: flex; gap: 16px; align-items: center; }
+        .search-box { flex: 1; padding: 12px 16px; border: 2px solid #e1e5e9; border-radius: 12px; font-size: 16px; }
+        .search-box:focus { outline: none; border-color: #0078d4; }
+        .department-filter { padding: 12px 16px; border: 2px solid #e1e5e9; border-radius: 12px; font-size: 14px; min-width: 140px; }
+        .results-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #edebe9; }
+        .results-count { font-size: 18px; font-weight: 600; color: #323130; }
+        .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .person-card { background: #ffffff; border: 1px solid #e1e5e9; border-radius: 12px; padding: 16px; transition: all 0.2s; cursor: pointer; height: 140px; display: flex; flex-direction: column; position: relative; }
+        .person-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: #0078d4; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .avatar { width: 48px; height: 48px; border-radius: 50%; background: #f3f2f1; display: flex; align-items: center; justify-content: center; color: #605e5c; font-size: 20px; }
+        .department-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: white; }
+        .badge-ผู้บริหาร { background: #8B0000; }
+        .badge-บริหาร { background: #4B0082; }
+        .badge-สำนักผู้บริหาร { background: #2F4F4F; }
+        .badge-ที่ปรึกษาสถาบัน { background: #8B4513; }
+        .badge-ส่วนงานตรวจสอบภายใน { background: #556B2F; }
+        .badge-ส่วนงานกฎหมาย { background: #B22222; }
+        .badge-งานสื่อสารองค์กร { background: #FF6347; }
+        .badge-นโยบายและแผน { background: #4682B4; }
+        .badge-เทคโนโลยีสารสนเทศ { background: #9932CC; }
+        .card-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .full-name { font-size: 16px; font-weight: 600; color: #323130; margin-bottom: 4px; }
+        .position { font-size: 14px; color: #605e5c; margin-bottom: 8px; }
+        .location { font-size: 12px; color: #8a8886; }
+        .tooltip { position: absolute; background: white; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 16px; min-width: 280px; z-index: 1000; display: none; top: -10px; left: 100%; margin-left: 10px; }
+        .person-card:hover .tooltip { display: block; }
+        .tooltip-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #edebe9; }
+        .tooltip-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #6264A7, #8764B8); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; }
+        .tooltip-name { font-size: 18px; font-weight: 600; color: #323130; }
+        .tooltip-position { font-size: 14px; color: #605e5c; }
+        .tooltip-body { display: flex; flex-direction: column; gap: 8px; }
+        .tooltip-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .tooltip-label { color: #8a8886; font-weight: 500; min-width: 80px; }
+        .tooltip-value { color: #323130; }
+        @media (max-width: 768px) {
+            .search-section { flex-direction: column; gap: 16px; }
+            .search-box, .department-filter { width: 100%; }
+            .people-grid { grid-template-columns: 1fr; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="people-search">
+        <div class="header">
+            <div class="header-icon">👥</div>
+            <div class="title">ไดเรกทอรีพนักงาน GIT</div>
+            <div class="subtitle">สถาบันอัญมณีและเครื่องประดับแห่งชาติ</div>
+        </div>
+        
+        <div class="search-section">
+            <input type="text" class="search-box" placeholder="ค้นหารายชื่อ, ตำแหน่ง, หรืออีเมล..." id="searchBox">
+            <select class="department-filter" id="departmentFilter">
+                <option value="">ทั้งหมด</option>
+                <option value="ผู้บริหาร">ผู้บริหาร</option>
+                <option value="บริหาร">บริหาร</option>
+                <option value="สำนักผู้บริหาร">สำนักผู้บริหาร</option>
+                <option value="ที่ปรึกษาสถาบัน">ที่ปรึกษาสถาบัน</option>
+                <option value="ส่วนงานตรวจสอบภายใน">ตรวจสอบภายใน</option>
+                <option value="ส่วนงานกฎหมาย">กฎหมาย</option>
+                <option value="งานสื่อสารองค์กร">สื่อสารองค์กร</option>
+                <option value="นโยบายและแผน">นโยบายและแผน</option>
+                <option value="เทคโนโลยีสารสนเทศ">IT</option>
+            </select>
+        </div>
+        
+        <div class="results-header">
+            <div class="results-count" id="resultsCount">ผลการค้นหา 8 คน</div>
+        </div>
+        
+        <div class="people-grid" id="peopleGrid"></div>
+    </div>
+
+    <script>
+        const people = [
+            { id: '1', fullName: 'สุเมธ ประสงค์พงษ์ชัย', englishName: 'SUMED PRASONGPONGCHAI', position: 'ผู้อำนวยการสถาบัน', department: 'ผู้บริหาร', email: 'psumed@git.or.th', phone: '02-123-4567', mobile: '081-234-5678', location: 'สำนักงานใหญ่', manager: '-' },
+            { id: '2', fullName: 'น้ำฟ้า มิสสึโมโต้', englishName: 'NAMFA MISZUMOTO', position: 'เลขานุการ ผู้อำนวยการ', department: 'บริหาร', email: 'mnamfa@git.or.th', phone: '02-234-5678', mobile: '082-345-6789', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '3', fullName: 'ณัฐมน ทีฆาวงศ์', englishName: 'NATTHAMON TEEKHAWONG', position: 'ผู้ช่วยเลขานุการ ผู้อำนวยการ', department: 'สำนักผู้บริหาร', email: 'tnatthamon@git.or.th', phone: '02-345-6789', mobile: '083-456-7890', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '4', fullName: 'ทนง ลีลาวัฒนสุข', englishName: 'THANONG LEELAWATANASUK', position: 'รองผู้อำนวยการด้านทคนิค', department: 'ผู้บริหาร', email: 'lthanong@git.or.th', phone: '02-456-7890', mobile: '084-567-8901', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '5', fullName: 'สิทธิชัย ปริญญานุสรณ์', englishName: 'SITTHICHAI PARINYANUSORN', position: 'รองผู้อำนวยการด้านธุรกิจ', department: 'ผู้บริหาร', email: 'psitthichai@git.or.th', phone: '02-678-9012', mobile: '086-789-0123', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '6', fullName: 'วชิรวิทย์ เปี่ยมปิ่นวงศ์', englishName: 'VACHIRAWIT PIAMPINWONG', position: 'นิติกรอาวุโส', department: 'ส่วนงานกฎหมาย', email: 'pvachirawit@git.or.th', phone: '02-345-6789', mobile: '093-456-7890', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '7', fullName: 'นธิมา จันกลิ่น', englishName: 'NATHIMA JUNKLIN', position: 'หัวหน้าฝ่าย', department: 'นโยบายและแผน', email: 'anathima@git.or.th', phone: '02-789-0123', mobile: '097-890-1234', location: 'สำนักงานใหญ่', manager: 'สุเมธ ประสงค์พงษ์ชัย' },
+            { id: '8', fullName: 'พงศา อาชายุทธการ', englishName: 'PONGSA ARCHAYUTHAKAN', position: 'หัวหน้าฝ่ายเทคโนโลยีสารสนเทศ', department: 'เทคโนโลยีสารสนเทศ', email: 'apongsa@git.or.th', phone: '02-123-4567', mobile: '081-234-5678', location: 'สำนักงานใหญ่', manager: 'ทนง ลีลาวัฒนสุข' }
+        ];
+
+        let filteredPeople = [...people];
+
+        function getDepartmentBadgeClass(department) {
+            const classes = {
+                'ผู้บริหาร': 'badge-ผู้บริหาร', 'บริหาร': 'badge-บริหาร', 'สำนักผู้บริหาร': 'badge-สำนักผู้บริหาร',
+                'ที่ปรึกษาสถาบัน': 'badge-ที่ปรึกษาสถาบัน', 'ส่วนงานตรวจสอบภายใน': 'badge-ส่วนงานตรวจสอบภายใน',
+                'ส่วนงานกฎหมาย': 'badge-ส่วนงานกฎหมาย', 'งานสื่อสารองค์กร': 'badge-งานสื่อสารองค์กร',
+                'นโยบายและแผน': 'badge-นโยบายและแผน', 'เทคโนโลยีสารสนเทศ': 'badge-เทคโนโลยีสารสนเทศ'
+            };
+            return classes[department] || 'badge-ผู้บริหาร';
+        }
+
+        function renderPeople() {
+            const grid = document.getElementById('peopleGrid');
+            const resultsCount = document.getElementById('resultsCount');
+            
+            resultsCount.textContent = `ผลการค้นหา ${filteredPeople.length} คน`;
+            
+            grid.innerHTML = filteredPeople.map(person => `
+                <div class="person-card">
+                    <div class="card-header">
+                        <div class="avatar">👤</div>
+                        <div class="department-badge ${getDepartmentBadgeClass(person.department)}">
+                            ${person.department}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="full-name">${person.fullName}</div>
+                        <div class="position">${person.position}</div>
+                        <div class="location">📍 ${person.location}</div>
+                    </div>
+                    <div class="tooltip">
+                        <div class="tooltip-header">
+                            <div class="tooltip-avatar">👤</div>
+                            <div>
+                                <div class="tooltip-name">${person.fullName}</div>
+                                <div class="tooltip-position">${person.position}</div>
+                            </div>
+                        </div>
+                        <div class="tooltip-body">
+                            <div class="tooltip-item"><span class="tooltip-label">ชื่อ EN:</span><span class="tooltip-value">${person.englishName}</span></div>
+                            <div class="tooltip-item"><span class="tooltip-label">อีเมล:</span><span class="tooltip-value">${person.email}</span></div>
+                            <div class="tooltip-item"><span class="tooltip-label">โทรศัพท์:</span><span class="tooltip-value">${person.phone}</span></div>
+                            <div class="tooltip-item"><span class="tooltip-label">มือถือ:</span><span class="tooltip-value">${person.mobile}</span></div>
+                            <div class="tooltip-item"><span class="tooltip-label">สถานที่:</span><span class="tooltip-value">${person.location}</span></div>
+                            <div class="tooltip-item"><span class="tooltip-label">ผู้บังคับบัญชา:</span><span class="tooltip-value">${person.manager}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterPeople() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const department = document.getElementById('departmentFilter').value;
+            
+            filteredPeople = people.filter(person => {
+                const matchesSearch = !searchTerm || 
+                    person.fullName.toLowerCase().includes(searchTerm) ||
+                    person.position.toLowerCase().includes(searchTerm) ||
+                    person.email.toLowerCase().includes(searchTerm) ||
+                    person.department.toLowerCase().includes(searchTerm);
+                
+                const matchesDepartment = !department || person.department === department;
+                
+                return matchesSearch && matchesDepartment;
+            });
+            
+            renderPeople();
+        }
+
+        document.getElementById('searchBox').addEventListener('input', filterPeople);
+        document.getElementById('departmentFilter').addEventListener('change', filterPeople);
+        renderPeople();
+    </script>
+</body>
+</html>
